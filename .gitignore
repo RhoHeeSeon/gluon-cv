@@ -1,4 +1,5 @@
 # Extra
+*.rec
 *.params
 *.states
 *.out
@@ -121,3 +122,8 @@ ENV/
 .idea/*
 *.sh
 /logs/
+
+
+# videos
+src/
+result/
