@@ -58,8 +58,8 @@ plt.show()
 # There is a convenient API for creating custom network with pre-trained weights.
 # This is equivalent to loading pre-trained model and call ``net.reset_class``.
 #
-# network = 'ssd_512_resnet50_v1_custom'              # SSD
-network = 'faster_rcnn_resnet50_v1b_custom'         # Faster RCNN
+network = 'ssd_512_resnet50_v1_custom'              # SSD
+# network = 'faster_rcnn_resnet50_v1b_custom'         # Faster RCNN
 # network = 'yolo3_mobilenet0.25_custom'                  # YOLOv3
 # net = gcv.model_zoo.get_model(network, classes=classes,
 #     pretrained_base=True, transfer='voc')
@@ -95,19 +95,9 @@ def get_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
         batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
     return train_loader
 
-def get_rcnn_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
-    from gluoncv.data.batchify import Tuple, Append, FasterRCNNTrainBatchify
-    from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
-    width, height = data_shape, data_shape
-    with autograd.train_mode():
-        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
-    batchify_fn = Tuple(Append(), Append())
-    train_loader = gluon.data.DataLoader(
-        train_dataset.transform(FasterRCNNDefaultTrainTransform(width, height, anchors)),
-        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
-    return train_loader
 
-train_data = get_rcnn_dataloader(net, dataset, 512, 16, 0)
+
+train_data = get_dataloader(net, dataset, 512, 16, 0)
 
 #############################################################################################
 # Try use GPU for training
