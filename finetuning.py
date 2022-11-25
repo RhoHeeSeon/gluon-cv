@@ -21,7 +21,6 @@ from mxnet import autograd, gluon
 import gluoncv as gcv
 from gluoncv.utils import download, viz
 
-
 #############################################################################################
 # Pikachu Dataset
 # ----------------
@@ -35,13 +34,11 @@ download(idx_url, path='pikachu_train.idx', overwrite=False)
 #############################################################################################
 # We can load dataset using ``RecordFileDetection``
 dataset = gcv.data.RecordFileDetection('pikachu_train.rec')
-classes = gcv.data.COCODetection.CLASSES
-classes += ['pikachu']
-print(classes)
-image, label = dataset[9]
+classes = ['pikachu']  # only one foreground class here
+image, label = dataset[5]
 print('label:', label)
 # display image and label
-ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes[-1])
+ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
 plt.show()
 
 
@@ -50,9 +47,7 @@ plt.show()
 # -------------------
 # Now we can grab a pre-trained model to finetune from. Here we have so many choices from :ref:`gluoncv-model-zoo-detection` Model Zoo.
 # Again for demo purpose, we choose a fast SSD network with MobileNet1.0 backbone.
-net_name = 'ssd_512_resnet50_v1_custom'
 # net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_voc', pretrained=True)
-# net = gcv.model_zoo.get_model(net_name, classes=classes, pretrained_base=False, transfer=None)
 
 #############################################################################################
 # reset network to predict pikachus!
@@ -63,13 +58,13 @@ net_name = 'ssd_512_resnet50_v1_custom'
 # There is a convenient API for creating custom network with pre-trained weights.
 # This is equivalent to loading pre-trained model and call ``net.reset_class``.
 #
-net = gcv.model_zoo.get_model(net_name, classes=classes,
+# network = 'ssd_512_resnet50_v1_custom'              # SSD
+network = 'faster_rcnn_resnet50_v1b_custom'         # Faster RCNN
+# network = 'yolo3_mobilenet0.25_custom'                  # YOLOv3
+# net = gcv.model_zoo.get_model(network, classes=classes,
+#     pretrained_base=True, transfer='voc')
+net = gcv.model_zoo.get_model(network, classes=classes,
     pretrained_base=True, transfer='voc')
-
-pre ='_pre'
-
-# net = gcv.model_zoo.get_model(net_name, classes=classes,
-#     pretrained_base=False, transfer='voc')
 
 #############################################################################################
 # By loading from fully pre-trained models, you are not only loading base network weights
@@ -100,7 +95,19 @@ def get_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
         batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
     return train_loader
 
-train_data = get_dataloader(net, dataset, 512, 16, 0)
+def get_rcnn_dataloader(net, train_dataset, data_shape, batch_size, num_workers):
+    from gluoncv.data.batchify import Tuple, Append, FasterRCNNTrainBatchify
+    from gluoncv.data.transforms.presets.rcnn import FasterRCNNDefaultTrainTransform
+    width, height = data_shape, data_shape
+    with autograd.train_mode():
+        _, _, anchors = net(mx.nd.zeros((1, 3, height, width)))
+    batchify_fn = Tuple(Append(), Append())
+    train_loader = gluon.data.DataLoader(
+        train_dataset.transform(FasterRCNNDefaultTrainTransform(width, height, anchors)),
+        batch_size, True, batchify_fn=batchify_fn, last_batch='rollover', num_workers=num_workers)
+    return train_loader
+
+train_data = get_rcnn_dataloader(net, dataset, 512, 16, 0)
 
 #############################################################################################
 # Try use GPU for training
@@ -139,7 +146,6 @@ for epoch in range(0, 2):
                 cls_pred, box_pred, _ = net(x)
                 cls_preds.append(cls_pred)
                 box_preds.append(box_pred)
-                print('cls_pred: ', cls_pred, 'cls_targets: ', cls_targets)
             sum_loss, cls_loss, box_loss = mbox_loss(
                 cls_preds, box_preds, cls_targets, box_targets)
             autograd.backward(sum_loss)
@@ -157,8 +163,7 @@ for epoch in range(0, 2):
 
 #############################################################################################
 # Save finetuned weights to disk
-net.save_parameters(f'{net_name}_pikachu{pre}.params')
-# net.save_parameters('ssd_512_mobilenet1.0_pikachu.params')
+net.save_parameters(f'{network}_pikachu.params')
 
 #############################################################################################
 # Predict with finetuned model
@@ -166,11 +171,8 @@ net.save_parameters(f'{net_name}_pikachu{pre}.params')
 # We can test the performance using finetuned weights
 test_url = 'https://raw.githubusercontent.com/zackchase/mxnet-the-straight-dope/master/img/pikachu.jpg'
 download(test_url, 'pikachu_test.jpg')
-# net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes, pretrained_base=False)
-net = gcv.model_zoo.get_model(net_name, pretrained=False)
-net.reset_class(classes)
-# net.load_parameters('ssd_512_mobilenet1.0_pikachu.params')
-net.load_parameters(f'{net_name}_pikachu{pre}.params')
+net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)
+net.load_parameters(f'{network}_pikachu.params')
 x, image = gcv.data.transforms.presets.ssd.load_test('pikachu_test.jpg', 512)
 cid, score, bbox = net(x)
 ax = viz.plot_bbox(image, bbox[0], score[0], cid[0], class_names=classes)

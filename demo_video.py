@@ -142,10 +142,13 @@ video = f'src/{video_name}.mp4'
 cap = cv2.VideoCapture(video)
 time.sleep(1) ### letting the camera autofocus
 
-result_video_path = f'result/{video_name}_.avi'
+result_video_path = f'result/{video_name}_mjpg.avi'
 fps = 30.0                     # FPS, 초당 프레임 수
 # fourcc = cv2.VideoWriter_fourcc('F','M','P','4')
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
+# fourcc = cv2.VideoWriter_fourcc(*'XVID')
+# fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+# fourcc = cv2.VideoWriter_fourcc(*'avc1')
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 size = (int(width), int(height))  
