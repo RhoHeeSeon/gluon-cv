@@ -156,7 +156,7 @@ fin = time.time()
 # Save finetuned weights to disk
 net.save_parameters(f'{network}_pikachu.params')
 print('training time: ', fin-start, 'sec')
-print('training time: ', divmod(fin-start))
+print('training time: ', divmod(fin-start, 60))
 
 #############################################################################################
 # Predict with finetuned model
