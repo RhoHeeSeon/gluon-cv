@@ -35,11 +35,11 @@ download(idx_url, path='pikachu_train.idx', overwrite=False)
 # We can load dataset using ``RecordFileDetection``
 dataset = gcv.data.RecordFileDetection('pikachu_train.rec')
 classes = ['pikachu']  # only one foreground class here
-image, label = dataset[5]
-print('label:', label)
-# display image and label
-ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
-plt.show()
+# image, label = dataset[5]
+# print('label:', label)
+# # display image and label
+# ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
+# plt.show()
 
 
 #############################################################################################
@@ -58,13 +58,13 @@ plt.show()
 # There is a convenient API for creating custom network with pre-trained weights.
 # This is equivalent to loading pre-trained model and call ``net.reset_class``.
 #
-network = 'ssd_512_resnet50_v1_custom'              # SSD
-# network = 'faster_rcnn_resnet50_v1b_custom'         # Faster RCNN
-# network = 'yolo3_mobilenet0.25_custom'                  # YOLOv3
-# net = gcv.model_zoo.get_model(network, classes=classes,
-#     pretrained_base=True, transfer='voc')
-net = gcv.model_zoo.get_model(network, classes=classes,
-    pretrained_base=True, transfer='voc')
+# network = 'ssd_512_resnet50_v1_custom'              # ResNet
+network = 'ssd_512_vgg16_atrous_custom'             # VGG16
+# network = 'ssd_512_mobilenet1.0_voc'                # MobileNet
+
+
+net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=True, transfer='voc')
+# net = gcv.model_zoo.get_model(network, pretrained=True)
 
 #############################################################################################
 # By loading from fully pre-trained models, you are not only loading base network weights
@@ -118,6 +118,7 @@ mbox_loss = gcv.loss.SSDMultiBoxLoss()
 ce_metric = mx.metric.Loss('CrossEntropy')
 smoothl1_metric = mx.metric.Loss('SmoothL1')
 
+start = time.time()
 for epoch in range(0, 2):
     ce_metric.reset()
     smoothl1_metric.reset()
@@ -150,23 +151,25 @@ for epoch in range(0, 2):
             print('[Epoch {}][Batch {}], Speed: {:.3f} samples/sec, {}={:.3f}, {}={:.3f}'.format(
                 epoch, i, batch_size/(time.time()-btic), name1, loss1, name2, loss2))
         btic = time.time()
-
+fin = time.time()
 #############################################################################################
 # Save finetuned weights to disk
 net.save_parameters(f'{network}_pikachu.params')
+print('training time: ', fin-start, 'sec')
+print('training time: ', divmod(fin-start))
 
 #############################################################################################
 # Predict with finetuned model
 # ----------------------------
 # We can test the performance using finetuned weights
-test_url = 'https://raw.githubusercontent.com/zackchase/mxnet-the-straight-dope/master/img/pikachu.jpg'
-download(test_url, 'pikachu_test.jpg')
-net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)
-net.load_parameters(f'{network}_pikachu.params')
-x, image = gcv.data.transforms.presets.ssd.load_test('pikachu_test.jpg', 512)
-cid, score, bbox = net(x)
-ax = viz.plot_bbox(image, bbox[0], score[0], cid[0], class_names=classes)
-plt.show()
+# test_url = 'https://raw.githubusercontent.com/zackchase/mxnet-the-straight-dope/master/img/pikachu.jpg'
+# download(test_url, 'pikachu_test.jpg')
+# net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)
+# net.load_parameters(f'{network}_pikachu.params')
+# x, image = gcv.data.transforms.presets.ssd.load_test('pikachu_test.jpg', 512)
+# cid, score, bbox = net(x)
+# ax = viz.plot_bbox(image, bbox[0], score[0], cid[0], class_names=classes)
+# plt.show()
 
 #############################################################################################
 # In two epochs and less than 5 min, we are able to detect pikachus perfectly!
