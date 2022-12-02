@@ -12,12 +12,12 @@ from gluoncv.data.transforms.presets.ssd import SSDDefaultValTransform
 ## network setting
 
 classes = ['pikachu']  # only one foreground class here
-# network = 'ssd_512_resnet50_v1_custom'              # SSD
+# network = 'ssd_512_resnet50_v1_custom'              # ResNet
 # network = 'ssd_512_vgg16_atrous_custom'             # VGG16
 network = 'ssd_512_mobilenet1.0_voc'                # MobileNet
 
-# net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)
-net = gcv.model_zoo.get_model(network, pretrained=True)
+# net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)      # for ResNet, VGG
+net = gcv.model_zoo.get_model(network, pretrained=True)         # for MobileNet
 
 net.load_parameters(f'{network}_pikachu.params')
 print('-'*100)
@@ -25,24 +25,58 @@ print(type(net.params))
 
 ## validation dataset
 
-url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.rec'
-idx_url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.idx'
-download(url, path='pikachu_val.rec', overwrite=False)
-download(idx_url, path='pikachu_val.idx', overwrite=False)
-
-val_dataset = gcv.data.RecordFileDetection('pikachu_val.rec')
 classes = ['pikachu']
+# # .rec file
+# url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.rec'
+# idx_url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.idx'
+# download(url, path='pikachu_val.rec', overwrite=False)
+# download(idx_url, path='pikachu_val.idx', overwrite=False)
 
-# ## visualzie validation dataset
+# val_dataset = gcv.data.RecordFileDetection('pikachu_val.rec')
 
-# image, label = val_dataset[5]
+# # .voc file
+class VOCLikePikachu(gcv.data.VOCDetection):
+    CLASSES = classes
+
+    def __init__(self, root=..., splits=..., transform=None, index_map=None, preload_label=True):
+        super(VOCLikePikachu, self).__init__(root, splits, transform, index_map, preload_label)
+
+    def __len__(self):
+        return super().__len__()
+
+    def __getitem__(self, idx):
+        return super().__getitem__(idx)
+
+val_dataset = VOCLikePikachu(root='dataset/pika', splits=[(2022, 'val')])
+print('**val_dataset**', val_dataset)
+
+# # .coco file
+
+
+## visualzie validation dataset
+
+# # visualize .rec file
+# image, label = val_dataset[0]
 # print('label:', label)
 # # display image and label
 # ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
-# plt.show()
-# print(len(val_dataset))
 
-## dataloader
+# visuazlie .voc file
+val_image, val_label = val_dataset[0]
+print('val_image', val_image.shape, 'val_label', val_label.shape)
+bboxes = val_label[:, :4]
+cids = val_label[:, 4:5]
+print('image:', val_image.shape)
+print('bboxes:', bboxes.shape, 'class ids:', cids.shape)
+ax = viz.plot_bbox(
+    val_image.asnumpy(),
+    bboxes,
+    labels=cids,
+    class_names=val_dataset.classes)
+plt.show()
+print(len(val_dataset))
+
+# dataloader
 
 def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
     """Get dataloader."""
@@ -57,6 +91,7 @@ def get_dataloader(val_dataset, data_shape, batch_size, num_workers):
 val_data = get_dataloader(
     val_dataset, data_shape=512, batch_size=1, num_workers=0)
 # classes = val_dataset.classes  # class names
+
 
 try:
     a = mx.nd.zeros((1,), ctx=mx.gpu(0))
