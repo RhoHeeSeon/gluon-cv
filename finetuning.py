@@ -35,11 +35,26 @@ download(idx_url, path='pikachu_train.idx', overwrite=False)
 # We can load dataset using ``RecordFileDetection``
 dataset = gcv.data.RecordFileDetection('pikachu_train.rec')
 classes = ['pikachu']  # only one foreground class here
-# image, label = dataset[5]
-# print('label:', label)
-# # display image and label
-# ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
-# plt.show()
+image, label = dataset[5]
+print('label:', label)
+# display image and label
+ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
+plt.show()
+
+url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.rec'
+idx_url = 'https://apache-mxnet.s3-accelerate.amazonaws.com/gluon/dataset/pikachu/val.idx'
+download(url, path='pikachu_val.rec', overwrite=False)
+download(idx_url, path='pikachu_val.idx', overwrite=False)
+
+dataset = gcv.data.RecordFileDetection('pikachu_val.rec')
+classes = ['pikachu']  # only one foreground class here
+image, label = dataset[5]
+print('label:', label)
+# display image and label
+ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
+plt.show()
+
+exit()
 
 
 #############################################################################################

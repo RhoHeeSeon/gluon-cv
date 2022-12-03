@@ -128,9 +128,16 @@ import mxnet as mx
 # Load the model
 # net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_voc', pretrained=True)
 
+
 classes = ['pikachu']  # only one foreground class here
-net = gcv.model_zoo.get_model('ssd_512_mobilenet1.0_custom', classes=classes, pretrained_base=False)
-net.load_parameters('ssd_512_mobilenet1.0_pikachu.params')
+# network = 'ssd_512_resnet50_v1_custom'              # ResNet
+network = 'ssd_512_vgg16_atrous_custom'             # VGG16
+# network = 'ssd_512_mobilenet1.0_voc'                # MobileNet
+
+net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)      # for ResNet, VGG
+# net = gcv.model_zoo.get_model(network, pretrained=False)         # for MobileNet
+
+net.load_parameters(f'{network}_pikachu.params')
 
 # Compile the model for faster speed
 net.hybridize()
