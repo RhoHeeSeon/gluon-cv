@@ -54,7 +54,6 @@ print('label:', label)
 ax = viz.plot_bbox(image, bboxes=label[:, :4], labels=label[:, 4:5], class_names=classes)
 plt.show()
 
-exit()
 
 
 #############################################################################################

@@ -130,8 +130,8 @@ import mxnet as mx
 
 
 classes = ['pikachu']  # only one foreground class here
-# network = 'ssd_512_resnet50_v1_custom'              # ResNet
-network = 'ssd_512_vgg16_atrous_custom'             # VGG16
+network = 'ssd_512_resnet50_v1_custom'              # ResNet
+# network = 'ssd_512_vgg16_atrous_custom'             # VGG16
 # network = 'ssd_512_mobilenet1.0_voc'                # MobileNet
 
 net = gcv.model_zoo.get_model(network, classes=classes, pretrained_base=False)      # for ResNet, VGG
@@ -148,8 +148,9 @@ cap = cv2.VideoCapture(0)
 time.sleep(1) ### letting the camera autofocus
 
 axes = None
-NUM_FRAMES = 200 # you can change this
-for i in range(NUM_FRAMES):
+NUM_FRAMES = 2000 # you can change this
+# for i in range(NUM_FRAMES):
+while True:
     # Load frame from the camera
     ret, frame = cap.read()
 
